@@ -162,7 +162,6 @@ async function buildState() {
 
   return {
     now: new Date().toISOString(),
-    host: process.env.HOSTNAME || null,
     theme,
     weather,
     backgrounds,

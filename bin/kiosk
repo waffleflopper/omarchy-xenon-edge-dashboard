@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Launch the dashboard full-screen in Chromium for the Xeneon Edge.
-# Hyprland window rules place the window on DP-2 (see hypr/waffle-dashboard.lua).
+# A Hyprland window rule places the window on the target output; see the
+# "Install" section of the README for the config snippet.
 set -euo pipefail
 
 PORT="${WAFFLE_DASHBOARD_PORT:-8787}"

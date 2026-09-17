@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Local secrets / overrides — never commit these
+.env
+.env.*
+*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Browser profile (the kiosk uses its own user-data-dir)
+chromium/
+chromium-profile/
+
+# Scratch space used when sourcing weather backgrounds
+assets/weather/_candidates/
+public/_preview.html
+
+# Editors / OS cruft
+.DS_Store
+.idea/
+.vscode/
+*~
+*.bak
