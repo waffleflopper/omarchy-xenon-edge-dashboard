@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Launch the dashboard full-screen in Chromium for the Xeneon Edge.
+# Hyprland window rules place the window on DP-2 (see hypr/waffle-dashboard.lua).
+set -euo pipefail
+
+PORT="${WAFFLE_DASHBOARD_PORT:-8787}"
+URL="http://127.0.0.1:${PORT}/"
+
+# Wait for the backend so the first paint isn't a connection error.
+for _ in $(seq 1 60); do
+  if curl -fsS -o /dev/null "${URL}healthz" 2>/dev/null; then break; fi
+  sleep 0.5
+done
+
+# Chromium owns fullscreen here (--kiosk); the Hyprland window rule only places
+# the window on DP-2 and strips the chrome. Setting `fullscreen` in the rule
+# instead stops sticking, so the split is deliberate.
+exec chromium \
+  --app="$URL" \
+  --kiosk \
+  --class=waffle-dashboard \
+  --user-data-dir="$HOME/.local/share/waffle-dashboard/chromium" \
+  --ozone-platform=wayland \
+  --no-first-run \
+  --no-default-browser-check \
+  --disable-infobars \
+  --disable-session-crashed-bubble \
+  --overscroll-history-navigation=0 \
+  --hide-scrollbars \
+  --touch-events=enabled

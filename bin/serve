@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Start the dashboard backend. mise shims provide node (and codex for the
+# app-server client) without needing a full login shell.
+set -euo pipefail
+
+export PATH="$HOME/.local/share/mise/shims:$PATH"
+
+ROOT="$(cd "$(dirname "$(readlink -f "$0")")/.." && pwd)"
+cd "$ROOT"
+
+exec node server.mjs
