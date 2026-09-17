@@ -190,4 +190,9 @@ images.
 
 ## Licence
 
-No licence file yet — add one before publishing if you want others to reuse it.
+[MIT](LICENSE) — covers the **code only**.
+
+The images in `assets/weather/` are excluded and stay under their own licences,
+listed in [`assets/weather/CREDITS.md`](assets/weather/CREDITS.md). Most are CC0
+or public domain, but two require attribution (and one is share-alike), so they
+cannot be relicensed as MIT. If you swap in your own images, update that file.

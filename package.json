@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Always-on dashboard for the Corsair Xeneon Edge: Codex + OpenCode Go usage, weather, clock and volume.",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "start": "node server.mjs",

@@ -3,6 +3,9 @@
 Images are from Wikimedia Commons. CC BY / CC BY-SA images require attribution;
 CC0 and public-domain images do not, but are credited here anyway.
 
+These images are **not** covered by the repository's MIT licence — each remains
+under the licence listed in the table below.
+
 | File | Source | Author | Licence |
 | --- | --- | --- | --- |
 | `clear-day.jpg` | [Sky Forest Clouds.jpg](https://commons.wikimedia.org/wiki/File%3ASky%20Forest%20Clouds.jpg) | Unknown (CC0 release) | CC0 |
