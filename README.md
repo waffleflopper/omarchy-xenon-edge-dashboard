@@ -14,10 +14,14 @@ Four cards, laid out in a row:
 - **Clock / weather** — time, date and current conditions, over a photo of the
   matching sky. Tap to flip for an 8-hour strip, sunrise/sunset, UV, humidity,
   wind, moon phase and a 5-day forecast.
-- **Codex** — remaining usage on the current window, plus reset countdown. The
-  back has a burn-rate projection ("on pace to run out in X"), a 30-day token
-  chart, streaks and reset credits.
-- **OpenCode Go** — rolling / weekly / monthly remaining.
+- **Temps / Tailscale** — live temperatures for the CPU, GPU, motherboard,
+  NVMe, RAM, WiFi and Ethernet sensors `lm_sensors` can see, each colour-coded
+  by heat. Tap to flip for Tailscale status: this node's address and each peer,
+  online or not.
+- **Usage** — OpenCode Go rolling and weekly remaining alongside a compact Codex
+  summary: weekly remaining, reset credits and the current streak / tokens
+  today. Tap to flip for the full Codex view: a burn-rate projection ("on pace
+  to run out in X"), a 30-day token chart, streaks and reset credits.
 - **Volume** — output device, level, mute and a slider. The back is a
   quick-actions panel: lock, night light, mic mute, screensaver, screenshot,
   theme switcher.
@@ -36,6 +40,8 @@ active Omarchy theme, live.
   Codex card
 - [OpenCode](https://opencode.ai) logged in with an OpenCode Go subscription
   (`opencode auth login`), for the OpenCode card
+- `lm_sensors` for the Temps card
+- [Tailscale](https://tailscale.com) for the Tailscale card
 - Internet access for weather (IP geolocation + [Open-Meteo](https://open-meteo.com))
 
 Cards whose data source is unavailable degrade gracefully — they show an error
@@ -166,6 +172,9 @@ The backend binds to **loopback only**.
   sends it as a Bearer token. Nothing is cached to disk or logged.
 - **Weather** geolocates from your public IP, then queries Open-Meteo. No API
   key, but it does mean your approximate location is used.
+- **Temps** shells out to `sensors -j` (`lm_sensors`); no configuration needed.
+- **Tailscale** shells out to `tailscale status --json`. No key is read; the
+  local CLI's own session is used.
 - **Weather images** are served from `assets/weather/`.
 
 Quick actions are restricted to a fixed whitelist in `src/actions.mjs`; nothing

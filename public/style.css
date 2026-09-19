@@ -191,6 +191,10 @@ body {
   width: 0;
 }
 
+.face-scroll.between {
+  justify-content: space-between;
+}
+
 /* ---------- back-face widgets ---------- */
 
 .hourly {
@@ -485,6 +489,30 @@ body {
   min-width: 0;
 }
 
+.hero.compact {
+  margin-top: 6px;
+}
+
+.hero.compact .hero-num {
+  font-size: 44px;
+}
+
+.hero.compact .hero-num .pct {
+  font-size: 20px;
+}
+
+.hero.compact .hero-side {
+  padding-bottom: 4px;
+}
+
+.hero.compact .hero-cap {
+  font-size: 14px;
+}
+
+.hero.compact .hero-sub {
+  font-size: 12px;
+}
+
 .hero-cap {
   font-size: 16px;
   font-weight: 600;
@@ -568,6 +596,140 @@ body {
 .row .bar {
   margin-top: 6px;
   height: 9px;
+}
+
+.usage-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.usage-section .rows {
+  margin-top: 0;
+}
+
+.usage-section .bar {
+  margin-top: 10px;
+}
+
+.usage-section .card-foot {
+  padding-top: 6px;
+}
+
+/* ---------- temps ---------- */
+
+.temp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.temp-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.temp-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.temp-value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.temp-value .unit {
+  margin-left: 1px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.temp .bar {
+  margin-top: 5px;
+  height: 8px;
+}
+
+/* ---------- tailscale ---------- */
+
+.ts-self {
+  padding: 9px 11px;
+  border-radius: 12px;
+  background: var(--panel-2);
+  border-left: 3px solid var(--green);
+}
+
+.ts-peers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ts-peer {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--panel-2);
+}
+
+.ts-dot {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.ts-dot.on {
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+}
+.ts-dot.off {
+  opacity: 0.5;
+}
+
+.ts-peer-body {
+  min-width: 0;
+}
+
+.ts-name {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ts-meta {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ts-self .ts-name {
+  font-size: 15px;
 }
 
 /* ---------- volume ---------- */

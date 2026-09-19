@@ -14,9 +14,18 @@ const el = {
   codexUsed: $('codex-used'),
   codexBar: $('codex-bar'),
   codexFoot: $('codex-foot'),
+  codexBackPlan: $('codex-back-plan'),
+  codexPace: $('codex-pace'),
+  codexSpark: $('codex-spark'),
+  codexStats: $('codex-stats'),
+  codexResets: $('codex-resets'),
   opencodePlan: $('opencode-plan'),
   opencodeRows: $('opencode-rows'),
-  opencodeFoot: $('opencode-foot'),
+  tempsBadge: $('temps-badge'),
+  tempsList: $('temps-list'),
+  tsState: $('ts-state'),
+  tsSelf: $('ts-self'),
+  tsPeers: $('ts-peers'),
   volDevice: $('vol-device'),
   volDeviceBadge: $('vol-device-badge'),
   volValue: $('vol-value'),
@@ -26,17 +35,11 @@ const el = {
   volSlider: $('vol-slider'),
   offline: $('offline'),
   weatherCard: $('weather-card'),
-  codexCard: $('codex-card'),
   volumeCard: $('volume-card'),
   wxPlace: $('wx-place'),
   wxHours: $('wx-hours'),
   wxStats: $('wx-stats'),
   wxDays: $('wx-days'),
-  codexBackPlan: $('codex-back-plan'),
-  codexPace: $('codex-pace'),
-  codexSpark: $('codex-spark'),
-  codexStats: $('codex-stats'),
-  codexResets: $('codex-resets'),
   qaMic: $('qa-mic'),
   actionGrid: $('action-grid'),
   actionFoot: $('action-foot'),
@@ -212,10 +215,75 @@ function renderCodex(codex) {
   el.codexFoot.innerHTML = foot.join('<br>')
 }
 
+/* ---------------- codex detail (usage card back) ---------------- */
+
+function renderCodexBack(codex) {
+  const d = codex?.data
+  if (!d) {
+    el.codexBackPlan.textContent = ''
+    el.codexPace.innerHTML = ''
+    el.codexSpark.innerHTML = ''
+    el.codexStats.innerHTML = ''
+    el.codexResets.innerHTML = ''
+    return
+  }
+
+  el.codexBackPlan.textContent = d.planType ? d.planType.toUpperCase() : ''
+
+  const p = d.pace
+  if (p) {
+    el.codexPace.style.setProperty('--pace-color', p.onPace ? 'var(--green)' : 'var(--red)')
+    el.codexPace.innerHTML = `
+      <div class="pace-head">${
+        p.onPace ? 'On pace to last until reset' : `On pace to run out in ${fmtHours(p.hoursLeft)}`
+      }</div>
+      <div class="pace-sub">Averaging ${p.perDay}%/day · resets in ${fmtHours(p.hoursToReset)}</div>`
+  } else {
+    el.codexPace.innerHTML = ''
+  }
+
+  const hist = d.dailyHistory ?? []
+  const max = Math.max(1, ...hist.map((h) => h.tokens))
+  el.codexSpark.innerHTML = hist.length
+    ? `<span class="spark-cap">Daily tokens · last ${hist.length} days</span>
+       <div class="spark">${hist
+         .map((h, i) => {
+           const height = Math.max(2, Math.round((h.tokens / max) * 100))
+           const today = i === hist.length - 1
+           return `<div class="spark-bar${today ? ' is-today' : ''}" style="height:${height}%" title="${
+             h.date
+           }: ${humanTokens(h.tokens)}"></div>`
+         })
+         .join('')}</div>`
+    : ''
+
+  const s = d.stats ?? {}
+  const stats = [
+    ['Current streak', s.currentStreakDays != null ? `${s.currentStreakDays} days` : '—'],
+    ['Longest streak', s.longestStreakDays != null ? `${s.longestStreakDays} days` : '—'],
+    ['Today', humanTokens(s.todayTokens) ?? '—'],
+    ['Lifetime', humanTokens(s.lifetimeTokens) ?? '—'],
+  ]
+  el.codexStats.innerHTML = stats
+    .map(
+      ([label, value]) =>
+        `<div class="stat"><div class="stat-label">${label}</div><div class="stat-value">${value}</div></div>`,
+    )
+    .join('')
+
+  const expiries = d.resetCreditExpiries ?? []
+  el.codexResets.innerHTML =
+    d.resetCredits > 0
+      ? `<div class="reset">
+           <span><strong>${d.resetCredits}</strong> full reset${d.resetCredits === 1 ? '' : 's'} available</span>
+           ${expiries.length ? `<span>next expires ${fmtDate(Math.min(...expiries))}</span>` : ''}
+         </div>`
+      : ''
+}
+
 const OPENCODE_WINDOWS = [
   ['rolling', 'Rolling'],
   ['weekly', 'Weekly'],
-  ['monthly', 'Monthly'],
 ]
 
 function renderOpenCode(opencode) {
@@ -227,7 +295,6 @@ function renderOpenCode(opencode) {
       opencode?.error ? 'unavailable' : 'Loading…'
     }</div>`
     el.opencodePlan.textContent = ''
-    el.opencodeFoot.textContent = ''
     return
   }
 
@@ -266,8 +333,6 @@ function renderOpenCode(opencode) {
 
     el.opencodeRows.appendChild(row)
   }
-
-  el.opencodeFoot.textContent = ''
 }
 
 function renderVolume(volume) {
@@ -342,70 +407,89 @@ function renderWeatherBack(weather) {
     .join('')
 }
 
-/* ---------------- codex back face ---------------- */
+/* ---------------- temps ---------------- */
 
-function renderCodexBack(codex) {
-  const d = codex?.data
-  if (!d) {
-    el.codexBackPlan.textContent = ''
-    el.codexPace.innerHTML = ''
-    el.codexSpark.innerHTML = ''
-    el.codexStats.innerHTML = ''
-    el.codexResets.innerHTML = ''
+function tempColor(value) {
+  if (value == null) return 'var(--accent)'
+  if (value >= 85) return 'var(--red)'
+  if (value >= 70) return 'var(--orange)'
+  if (value >= 55) return 'var(--yellow)'
+  return 'var(--green)'
+}
+
+function renderTemps(temps) {
+  const d = temps?.data
+  el.tempsList.innerHTML = ''
+
+  if (!d?.sensors?.length) {
+    el.tempsBadge.textContent = ''
+    el.tempsList.innerHTML = `<div class="row-reset">${temps?.error ? 'unavailable' : 'Loading…'}</div>`
     return
   }
 
-  el.codexBackPlan.textContent = d.planType ? d.planType.toUpperCase() : ''
+  el.tempsBadge.textContent = `${d.sensors.length} sensors`
 
-  const p = d.pace
-  if (p) {
-    el.codexPace.style.setProperty('--pace-color', p.onPace ? 'var(--green)' : 'var(--red)')
-    el.codexPace.innerHTML = `
-      <div class="pace-head">${
-        p.onPace ? 'On pace to last until reset' : `On pace to run out in ${fmtHours(p.hoursLeft)}`
-      }</div>
-      <div class="pace-sub">Averaging ${p.perDay}%/day · resets in ${fmtHours(p.hoursToReset)}</div>`
-  } else {
-    el.codexPace.innerHTML = ''
+  for (const s of d.sensors) {
+    const row = document.createElement('div')
+    row.className = 'temp'
+    row.innerHTML = `
+      <div class="temp-head">
+        <span class="temp-name">${s.label}</span>
+        <span class="temp-value">${Math.round(s.value)}<span class="unit">°C</span></span>
+      </div>
+      <div class="bar"><div class="bar-fill"></div></div>
+    `
+    const fill = row.querySelector('.bar-fill')
+    const pct = Math.max(0, Math.min(100, s.value))
+    fill.style.width = `${pct}%`
+    fill.style.setProperty('--bar-color', tempColor(s.value))
+    el.tempsList.appendChild(row)
+  }
+}
+
+/* ---------------- tailscale ---------------- */
+
+function renderTailscale(tailscale) {
+  const d = tailscale?.data
+  el.tsSelf.innerHTML = ''
+  el.tsPeers.innerHTML = ''
+
+  if (!d) {
+    el.tsState.textContent = ''
+    el.tsSelf.innerHTML = `<div class="row-reset">${tailscale?.error ? 'unavailable' : 'Loading…'}</div>`
+    return
   }
 
-  const hist = d.dailyHistory ?? []
-  const max = Math.max(1, ...hist.map((h) => h.tokens))
-  el.codexSpark.innerHTML = hist.length
-    ? `<span class="spark-cap">Daily tokens · last ${hist.length} days</span>
-       <div class="spark">${hist
-         .map((h, i) => {
-           const height = Math.max(2, Math.round((h.tokens / max) * 100))
-           const today = i === hist.length - 1
-           return `<div class="spark-bar${today ? ' is-today' : ''}" style="height:${height}%" title="${
-             h.date
-           }: ${humanTokens(h.tokens)}"></div>`
-         })
-         .join('')}</div>`
-    : ''
+  el.tsState.textContent = d.backendState ? d.backendState.toUpperCase() : ''
 
-  const s = d.stats ?? {}
-  const stats = [
-    ['Current streak', s.currentStreakDays != null ? `${s.currentStreakDays} days` : '—'],
-    ['Longest streak', s.longestStreakDays != null ? `${s.longestStreakDays} days` : '—'],
-    ['Today', humanTokens(s.todayTokens) ?? '—'],
-    ['Lifetime', humanTokens(s.lifetimeTokens) ?? '—'],
-  ]
-  el.codexStats.innerHTML = stats
-    .map(
-      ([label, value]) =>
-        `<div class="stat"><div class="stat-label">${label}</div><div class="stat-value">${value}</div></div>`,
-    )
-    .join('')
+  const self = d.self ?? {}
+  const ips = (self.tailscaleIps ?? []).filter((ip) => !ip.includes(':'))
+  el.tsSelf.innerHTML = `
+    <div class="ts-name">${self.hostName ?? 'this device'}</div>
+    <div class="ts-meta">${[ips.join(', '), self.dnsName].filter(Boolean).join(' · ')}</div>
+  `
 
-  const expiries = d.resetCreditExpiries ?? []
-  el.codexResets.innerHTML =
-    d.resetCredits > 0
-      ? `<div class="reset">
-           <span><strong>${d.resetCredits}</strong> full reset${d.resetCredits === 1 ? '' : 's'} available</span>
-           ${expiries.length ? `<span>next expires ${fmtDate(Math.min(...expiries))}</span>` : ''}
-         </div>`
-      : ''
+  const peers = d.peers ?? []
+  el.tsPeers.innerHTML = peers.length
+    ? peers
+        .map((p) => {
+          const state = p.online
+            ? p.curAddr
+              ? 'direct'
+              : p.relay
+                ? `relay ${p.relay}`
+                : 'online'
+            : 'offline'
+          return `<div class="ts-peer">
+            <span class="ts-dot ${p.online ? 'on' : 'off'}"></span>
+            <div class="ts-peer-body">
+              <div class="ts-name">${p.hostName}</div>
+              <div class="ts-meta">${[p.os, state].filter(Boolean).join(' · ')}</div>
+            </div>
+          </div>`
+        })
+        .join('')
+    : '<div class="row-reset">No peers</div>'
 }
 
 /* ---------------- quick actions back face ---------------- */
@@ -545,6 +629,8 @@ async function refreshState() {
     renderCodex(state.codex)
     renderCodexBack(state.codex)
     renderOpenCode(state.opencode)
+    renderTemps(state.temps)
+    renderTailscale(state.tailscale)
     renderVolume(state.volume)
     renderMic(state.mic)
     el.offline.classList.remove('show')

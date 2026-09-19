@@ -43,24 +43,66 @@
         </div>
       </section>
 
-      <!-- codex -------------------------------------------------------- -->
-      <section class="card flip" id="codex-card">
+      <!-- temps / tailscale -------------------------------------------- -->
+      <section class="card flip" id="temps-card">
         <div class="flip-inner">
-          <div class="face front" tabindex="0" role="button" aria-label="Codex usage. Activate for details.">
+          <div class="face front" tabindex="0" role="button" aria-label="Temperatures. Activate for Tailscale.">
             <header class="card-head">
-              <span class="card-title">Codex</span>
-              <span class="badge" id="codex-plan"></span>
+              <span class="card-title">Temps</span>
+              <span class="badge" id="temps-badge"></span>
             </header>
-            <div class="hero">
-              <div class="hero-num"><span id="codex-remaining">--</span><span class="pct">%</span></div>
-              <div class="hero-side">
-                <div class="hero-cap" id="codex-window">left</div>
-                <div class="hero-sub" id="codex-used"></div>
+            <div class="face-scroll">
+              <div class="temp-list" id="temps-list"></div>
+            </div>
+            <button class="flip-btn" type="button" aria-label="Show Tailscale">&#8250;</button>
+          </div>
+
+          <div class="face back">
+            <header class="card-head">
+              <span class="card-title">Tailscale</span>
+              <span class="badge" id="ts-state"></span>
+            </header>
+            <div class="face-scroll">
+              <div class="ts-self" id="ts-self"></div>
+              <div class="ts-peers" id="ts-peers"></div>
+            </div>
+            <button class="flip-btn" type="button" aria-label="Back to temperatures">&#8249;</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- usage: opencode go + codex (front) / codex detail (back) ------- -->
+      <section class="card flip" id="usage-card">
+        <div class="flip-inner">
+          <div class="face front" tabindex="0" role="button" aria-label="Usage. Activate for Codex details.">
+            <header class="card-head">
+              <span class="card-title">Usage</span>
+            </header>
+            <div class="face-scroll between">
+              <div class="usage-section">
+                <div class="section-head">
+                  <span class="section-label">OpenCode Go</span>
+                  <span class="badge" id="opencode-plan"></span>
+                </div>
+                <div class="rows" id="opencode-rows"></div>
+              </div>
+              <div class="usage-section">
+                <div class="section-head">
+                  <span class="section-label">Codex</span>
+                  <span class="badge" id="codex-plan"></span>
+                </div>
+                <div class="hero compact">
+                  <div class="hero-num"><span id="codex-remaining">--</span><span class="pct">%</span></div>
+                  <div class="hero-side">
+                    <div class="hero-cap" id="codex-window">left</div>
+                    <div class="hero-sub" id="codex-used"></div>
+                  </div>
+                </div>
+                <div class="bar"><div class="bar-fill" id="codex-bar"></div></div>
+                <div class="card-foot" id="codex-foot"></div>
               </div>
             </div>
-            <div class="bar"><div class="bar-fill" id="codex-bar"></div></div>
-            <div class="card-foot" id="codex-foot"></div>
-            <button class="flip-btn" type="button" aria-label="Show details">&#8250;</button>
+            <button class="flip-btn" type="button" aria-label="Show Codex details">&#8250;</button>
           </div>
 
           <div class="face back">
@@ -74,19 +116,9 @@
               <div class="stat-grid" id="codex-stats"></div>
               <div class="reset-list" id="codex-resets"></div>
             </div>
-            <button class="flip-btn" type="button" aria-label="Back to summary">&#8249;</button>
+            <button class="flip-btn" type="button" aria-label="Back to usage">&#8249;</button>
           </div>
         </div>
-      </section>
-
-      <!-- opencode go (no flip) ---------------------------------------- -->
-      <section class="card">
-        <header class="card-head">
-          <span class="card-title">OpenCode Go</span>
-          <span class="badge" id="opencode-plan"></span>
-        </header>
-        <div class="rows" id="opencode-rows"></div>
-        <div class="card-foot" id="opencode-foot"></div>
       </section>
 
       <!-- volume / quick actions --------------------------------------- -->

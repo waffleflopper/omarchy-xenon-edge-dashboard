@@ -11,6 +11,8 @@ import { readTheme } from './src/theme.mjs'
 import { readVolume, setVolume } from './src/volume.mjs'
 import { scanBackgrounds } from './src/backgrounds.mjs'
 import { readMic, runAction } from './src/actions.mjs'
+import { readTemps } from './src/temps.mjs'
+import { readTailscale } from './src/tailscale.mjs'
 
 const ROOT = dirname(fileURLToPath(import.meta.url))
 const PUBLIC_DIR = join(ROOT, 'public')
@@ -80,6 +82,8 @@ const sources = {
   opencode: source(readOpenCodeGo, 60_000),
   weather: source(readWeather, 10 * 60_000),
   theme: source(readTheme, 60_000),
+  temps: source(readTemps, 10_000),
+  tailscale: source(readTailscale, 20_000),
   // Short TTL so dropping a new image in shows up quickly.
   backgrounds: source(() => scanBackgrounds(join(ASSETS_DIR, 'weather')), 30_000),
 }
@@ -144,21 +148,24 @@ async function serveStatic(res, urlPath) {
 }
 
 async function buildState() {
-  const [theme, weather, backgrounds, codex, opencode, volume, mic] = await Promise.all([
-    sources.theme(),
-    sources.weather(),
-    sources.backgrounds(),
-    sources.codex(),
-    sources.opencode(),
-    readVolume().then(
-      (data) => ({ ok: true, data }),
-      (err) => ({ ok: false, error: String(err?.message ?? err) }),
-    ),
-    readMic().then(
-      (data) => ({ ok: true, data }),
-      (err) => ({ ok: false, error: String(err?.message ?? err) }),
-    ),
-  ])
+  const [theme, weather, backgrounds, codex, opencode, temps, tailscale, volume, mic] =
+    await Promise.all([
+      sources.theme(),
+      sources.weather(),
+      sources.backgrounds(),
+      sources.codex(),
+      sources.opencode(),
+      sources.temps(),
+      sources.tailscale(),
+      readVolume().then(
+        (data) => ({ ok: true, data }),
+        (err) => ({ ok: false, error: String(err?.message ?? err) }),
+      ),
+      readMic().then(
+        (data) => ({ ok: true, data }),
+        (err) => ({ ok: false, error: String(err?.message ?? err) }),
+      ),
+    ])
 
   return {
     now: new Date().toISOString(),
@@ -167,6 +174,8 @@ async function buildState() {
     backgrounds,
     codex,
     opencode,
+    temps,
+    tailscale,
     volume,
     mic,
   }
