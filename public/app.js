@@ -507,7 +507,9 @@ let footTimer = null
 
 function setActionFoot(message, ok = true) {
   el.actionFoot.textContent = message
-  el.actionFoot.style.color = ok ? 'var(--muted)' : 'var(--red)'
+  // The message carries the error state in words. Keep its text on the
+  // contrast-checked foreground role instead of assuming theme red is text-safe.
+  el.actionFoot.style.color = ok ? 'var(--muted)' : 'var(--fg)'
   clearTimeout(footTimer)
   footTimer = setTimeout(() => {
     el.actionFoot.textContent = ''

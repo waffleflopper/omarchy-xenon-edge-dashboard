@@ -7,7 +7,8 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "kiosk": "bin/kiosk"
+    "kiosk": "bin/kiosk",
+    "test": "node --test"
   },
   "engines": {
     "node": ">=20"
