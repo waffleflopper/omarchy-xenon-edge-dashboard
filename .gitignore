@@ -14,13 +14,10 @@ npm-debug.log*
 chromium/
 chromium-profile/
 
-# Scratch space used when sourcing weather backgrounds
-assets/weather/_candidates/
-public/_preview.html
-
 # Editors / OS cruft
 .DS_Store
 .idea/
 .vscode/
 *~
 *.bak
+.audit/

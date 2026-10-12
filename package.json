@@ -2,7 +2,7 @@
   "name": "waffle-dashboard",
   "version": "1.0.0",
   "private": true,
-  "description": "Always-on dashboard for the Corsair Xeneon Edge: Codex + OpenCode Go usage, weather, clock and volume.",
+  "description": "Always-on dashboard for the Corsair Xeneon Edge: clock, illustrated weather, AI quota pace, system health and quick controls.",
   "license": "MIT",
   "type": "module",
   "scripts": {

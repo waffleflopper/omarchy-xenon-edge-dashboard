@@ -168,3 +168,24 @@ export function readTheme() {
 
   return { name: name || 'unknown', ...resolvePalette(text == null ? {} : parseColorsToml(text)) }
 }
+
+const displayName = (slug) => slug.replace(/(^|-)([a-z])/g, (_, sep, c) => sep + c.toUpperCase()).replace(/-/g, ' ')
+export const themeSlug = (name) => name.trim().toLowerCase().replace(/\s+/g, '-')
+
+export function listThemes() {
+  const themes = new Map()
+  for (const base of [USER_THEMES, SYSTEM_THEMES]) {
+    let entries
+    try {
+      entries = readdirSync(base, { withFileTypes: true })
+    } catch {
+      continue
+    }
+    for (const entry of entries) {
+      if (!(entry.isDirectory() || entry.isSymbolicLink()) || themes.has(entry.name)) continue
+      const text = readText(join(base, entry.name, 'colors.toml'))
+      themes.set(entry.name, { name: displayName(entry.name), slug: entry.name, ...resolvePalette(text == null ? {} : parseColorsToml(text)) })
+    }
+  }
+  return [...themes.values()].sort((a, b) => a.name.localeCompare(b.name))
+}

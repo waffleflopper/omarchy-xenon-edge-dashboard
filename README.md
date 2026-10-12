@@ -1,51 +1,53 @@
 # Waffle Dashboard
 
-An always-on dashboard for a small secondary display, built for
-[Omarchy](https://omarchy.org/) (Arch + Hyprland). It runs as a local web page
-rendered full-screen in Chromium on a dedicated monitor.
+An always-on dashboard for a small secondary touchscreen, built for
+[Omarchy](https://omarchy.org/) (Arch + Hyprland). It is a local web page shown
+full-screen in Chromium on a dedicated monitor.
 
-Written against a 2560×720 touchscreen at scale 1.6 (1600×450 logical), but it
-is just a web page — any output works.
+It is laid out for a Corsair Xeneon Edge: 2560×720 at scale 1.6, so 1600×450
+CSS pixels, or 1580×404 when the kiosk window is tiled. Ordinary browser
+windows narrower than 1450 px get a stacked, scrolling layout.
 
 ## What it shows
 
-Four cards, laid out in a row:
+- **Clock and weather scene.** Time, date and an illustrated sky that follows
+  day, dusk, night, cloud, rain, snow, fog and storms at the forecast location,
+  with an approximate lunar phase. Tap it for the next 12 hours, five days,
+  sunrise and sunset, feels-like, wind and gusts, pressure, humidity, cloud
+  cover, UV and the moon. The Location tab searches for a place and saves it,
+  or goes back to the approximate location from your internet connection.
+- **Aurora.** Drawn only when every check passes: a live NOAA forecast of at
+  least 10% near the weather location, a recent model run, darkness, cloud
+  under 50% and current weather. It is labelled as a forecast, never a sighting.
+- **AI quota.** One row per account: OpenAI (Codex) and two Claude accounts.
+  Each reported window shows the share used, an even-pace tick and a pace chip.
+  Pace is the projected use at reset (used ÷ elapsed share of the window):
+  under below 95%, at from 95% to 105%, over above 105%. The first five minutes
+  of a window are "early", a window past its reset is "reset", and 100% used is
+  "limit hit". A window an account does not report shows "Not reported", never 0%.
+- **System.** CPU (k10temp Tctl), GPU (nvidia-smi) and board (nct6687 Diode 0)
+  temperatures, storage with `/` and `/home` counted once when they share a
+  filesystem, and memory.
+- **Dock.** Four quick launchers you can edit on the screen, volume and mute,
+  theme picker, screenshot, screensaver and power. Sleep and shut down each ask
+  for confirmation with Cancel focused.
 
-- **Clock / weather** — time, date and current conditions, over a photo of the
-  matching sky. Tap to flip for an 8-hour strip, sunrise/sunset, UV, humidity,
-  wind, moon phase and a 5-day forecast.
-- **Temps / Tailscale** — live temperatures for the CPU, GPU, motherboard,
-  NVMe, RAM, WiFi and Ethernet sensors `lm_sensors` can see, each colour-coded
-  by heat. Tap to flip for Tailscale status: this node's address and each peer,
-  online or not.
-- **Usage** — OpenCode Go rolling and weekly remaining alongside a compact Codex
-  summary: weekly remaining, reset credits and the current streak / tokens
-  today. Tap to flip for the full Codex view: a burn-rate projection ("on pace
-  to run out in X"), a 30-day token chart, streaks and reset credits.
-- **Volume** — output device, level, mute and a slider. The back is a
-  quick-actions panel: lock, night light, mic mute, screensaver, screenshot,
-  theme switcher.
-
-Cards flip on tap or via the tab on their right edge. The whole UI follows the
-active Omarchy theme, live.
+Every source is read on its own schedule. When one fails the others carry on,
+and the failed one keeps its last reading marked as stale with the reason and
+its age. The page follows the active Omarchy theme live.
 
 ## Requirements
 
-- Omarchy / Hyprland on Wayland (the window placement and quick actions are
-  Omarchy-specific; the rest is not)
-- Node.js 20+ (no dependencies — nothing to `npm install`)
+- Omarchy / Hyprland on Wayland, with uwsm (launchers start through `uwsm-app`)
+- Node.js 20+ (no dependencies, nothing to `npm install`)
 - Chromium
 - PipeWire (`wpctl`) for volume
-- [Codex CLI](https://github.com/openai/codex) installed and logged in, for the
-  Codex card
-- [OpenCode](https://opencode.ai) logged in with an OpenCode Go subscription
-  (`opencode auth login`), for the OpenCode card
-- `lm_sensors` for the Temps card
-- [Tailscale](https://tailscale.com) for the Tailscale card
-- Internet access for weather (IP geolocation + [Open-Meteo](https://open-meteo.com))
-
-Cards whose data source is unavailable degrade gracefully — they show an error
-rather than breaking the page.
+- `lm_sensors`, and `nvidia-smi` for an NVIDIA GPU
+- [Codex CLI](https://github.com/openai/codex), signed in, for the OpenAI row
+- Claude Code, signed in, for each Claude row
+- Internet access for weather ([Open-Meteo](https://open-meteo.com)), the
+  aurora forecast ([NOAA SWPC](https://www.swpc.noaa.gov/)) and the approximate
+  location ([ipwho.is](https://ipwho.is)) when no place is saved
 
 ## Install
 
@@ -136,72 +138,122 @@ If you serve on a different port, update the class to match
 
 ### 5. Instant theme following (optional)
 
-The dashboard already follows the Omarchy theme, but its cache means a change
-can take up to ~90s. To make it immediate, install the hook:
+The dashboard checks the Omarchy theme every minute. To restyle immediately,
+install the hook:
 
 ```bash
 omarchy hook install theme-set ~/Projects/waffle-dashboard/hooks/theme-set-refresh.sh
 ```
 
-This calls `POST /api/theme/refresh`, and the server pushes an update to the page
-over SSE. Note `omarchy hook install` **copies** the script, so re-run it after
-editing.
+It posts to `/api/theme/refresh` and the server pushes the new palette to the
+page. `omarchy hook install` copies the script, so re-run it after editing.
 
 ## Configuration
 
-| Variable | Where | Default |
+Settings live in `~/.config/waffle-dashboard/config.json`. The file is
+optional; missing keys use the defaults below. The dashboard writes it only
+when you save launchers or a location, atomically, and keeps keys it does not
+know. If the file is not valid JSON or a field is invalid, the dashboard
+reports it, uses defaults for the affected setting and refuses to save until
+you fix or remove the file.
+
+```json
+{
+  "launchers": [
+    { "label": "Helium", "desktopId": "helium.desktop" },
+    { "label": "Terminal", "desktopId": "foot.desktop" },
+    { "label": "T3 Code", "desktopId": "com.t3tools.T3Code.desktop" },
+    { "label": "Discord", "desktopId": "Discord.desktop" }
+  ],
+  "location": null,
+  "units": "imperial",
+  "mounts": ["/", "/home"],
+  "edgeMonitor": "DP-2",
+  "launchMonitor": null,
+  "accounts": [
+    { "id": "openai", "provider": "codex", "label": "OpenAI" },
+    { "id": "claude", "provider": "claude", "label": "Claude", "configDir": "~/.claude", "identityFile": "~/.claude.json" },
+    { "id": "claude-waffle", "provider": "claude", "label": "ClaudeWaffle", "configDir": "~/.claude_waffle", "identityFile": "~/.claude_waffle/.claude.json" }
+  ]
+}
+```
+
+- `launchers`: up to four installed desktop entries. The stable T3 Code entry
+  is listed in the editor even though it is hidden from menus.
+- `location`: `{ "name", "lat", "lon" }`, or `null` to use the approximate
+  location from your public IP.
+- `edgeMonitor` / `launchMonitor`: apps never open on the Edge. They go to
+  `launchMonitor` if set, otherwise the focused other monitor, otherwise the
+  largest one. If focus cannot be moved off the Edge, the launch is cancelled
+  with a message.
+
+| Variable | Used by | Default |
 | --- | --- | --- |
 | `PORT` | server | `8787` |
-| `HOST` | server | `127.0.0.1` |
+| `WAFFLE_CONFIG_PATH` | server | `~/.config/waffle-dashboard/config.json` |
+| `WAFFLE_DRY_RUN` | server | empty |
 | `CODEX_BIN` | server | auto-detected |
 | `WAFFLE_DASHBOARD_PORT` | `bin/kiosk`, hook | `8787` |
 
-Weather backgrounds are drop-in images in `assets/weather/`, named after the
-condition (`clear-day`, `clear-night`, `partly`, `clouds`, `rain`, `snow`, `fog`,
-`storm`) plus an optional `default`. The first match wins across
-`webp`, `avif`, `jpg`, `jpeg`, `png`, `svg` — case-insensitive. No restart
-needed; the directory is rescanned every 30s.
+`WAFFLE_DRY_RUN` is a comma-separated list of command groups to record in the
+log instead of running: `power`, `launch`, `theme`, `screenshot`,
+`screensaver`, `volume`. It is never turned on implicitly. For a development
+copy that cannot sleep or shut the machine down:
+
+```bash
+PORT=8788 WAFFLE_CONFIG_PATH=/tmp/waffle-dev.json WAFFLE_DRY_RUN=power,theme,launch node server.mjs
+```
 
 ## Data sources and credentials
 
-The backend binds to **loopback only**.
+The backend listens on loopback only. Credentials stay on the server and never
+appear in responses or logs; errors reach the page as short fixed messages.
 
-- **Codex** talks JSON-RPC to `codex app-server` so that Codex owns its own OAuth
-  refresh — this project never reads `~/.codex/auth.json`.
-- **OpenCode Go** reads its key from `~/.local/share/opencode/auth.json` and
-  sends it as a Bearer token. Nothing is cached to disk or logged.
-- **Weather** geolocates from your public IP, then queries Open-Meteo. No API
-  key, but it does mean your approximate location is used.
-- **Temps** shells out to `sensors -j` (`lm_sensors`); no configuration needed.
-- **Tailscale** shells out to `tailscale status --json`. No key is read; the
-  local CLI's own session is used.
-- **Weather images** are served from `assets/weather/`.
+- **Codex** talks JSON-RPC to `codex app-server --stdio`, which owns its own
+  OAuth refresh. `~/.codex/auth.json` is never read.
+- **Claude** reads each account's `<configDir>/.credentials.json` afresh on
+  every refresh and calls the Claude usage endpoint with that token. It never
+  refreshes or writes credentials: an expired sign-in is shown as expired until
+  Claude Code renews it. A provider `Retry-After` is honoured, including by the
+  Retry button. If two configured accounts turn out to be the same sign-in, the
+  row says so by label; account IDs and emails never leave the server.
+- **Weather** comes from Open-Meteo with epoch times and the location's time
+  zone, so hours and sunrise are shown in the forecast location's local time.
+- **Aurora** is the NOAA SWPC OVATION 30-minute forecast. The server keeps only
+  the grid cell nearest the weather location.
+- **Hardware** runs `sensors -j` and `nvidia-smi` and reads `/proc`.
 
-Quick actions are restricted to a fixed whitelist in `src/actions.mjs`; nothing
-caller-supplied is ever executed.
+Commands are fixed argument lists run without a shell (`src/actions.mjs`). The
+only values that come from a request are a launcher already in your config, a
+theme name from the installed list, a power choice of sleep or shut down, and a
+volume number clamped to 0..1.
 
 ## HTTP API
+
+Every route except `/healthz` requires the exact `Host` `127.0.0.1:<port>` or
+`localhost:<port>`. No CORS headers are sent.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
 | GET | `/healthz` | liveness |
-| GET | `/api/state` | everything the page renders |
-| GET/POST | `/api/volume` | read / change output volume |
-| POST | `/api/action` | run a whitelisted quick action |
-| GET | `/api/events` | SSE; currently emits `theme` |
-| POST | `/api/theme/refresh` | drop the theme cache and notify clients |
+| GET | `/api/stream` | SSE. Replays every source on connect, then sends each change as `event: slot` |
+| GET | `/api/apps` | installed launchable applications |
+| GET | `/api/themes` | installed Omarchy themes with palettes |
+| POST | `/api/do` | one action as JSON; same Origin and `content-type: application/json` required |
+| POST | `/api/theme/refresh` | re-read the theme now; for the hook, which sends no Origin |
 
-## Weather image credits
+## Development
 
-See [`assets/weather/CREDITS.md`](assets/weather/CREDITS.md). Most are CC0 or
-public domain; two require attribution, so **keep that file** if you keep the
-images.
+```bash
+npm test
+```
+
+Tests use literal expected values at the boundaries: pace thresholds, provider
+payload parsing, config handling, the source hub and the HTTP guards. HTTP tests
+use a recording command runner, so nothing is ever launched, suspended or shut
+down.
 
 ## Licence
 
-[MIT](LICENSE) — covers the **code only**.
-
-The images in `assets/weather/` are excluded and stay under their own licences,
-listed in [`assets/weather/CREDITS.md`](assets/weather/CREDITS.md). Most are CC0
-or public domain, but two require attribution (and one is share-alike), so they
-cannot be relicensed as MIT. If you swap in your own images, update that file.
+[MIT](LICENSE). The weather art is drawn in code (`public/scene.mjs`) and is
+covered by the same licence.

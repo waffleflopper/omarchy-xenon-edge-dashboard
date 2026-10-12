@@ -1,158 +1,99 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Waffle Dashboard</title>
-    <link rel="stylesheet" href="/style.css" />
-  </head>
-  <body>
-    <main class="grid">
-      <!-- weather ------------------------------------------------------ -->
-      <section class="card flip" id="weather-card">
-        <div class="flip-inner">
-          <div class="face front face-split" tabindex="0" role="button" aria-label="Weather. Activate for details.">
-            <div class="wx-bg" id="wx-bg" aria-hidden="true"></div>
-            <div class="clock">
-              <div class="clock-time" id="clock-time">--:--</div>
-              <div class="clock-date" id="clock-date">&hellip;</div>
-            </div>
-            <div class="weather">
-              <div class="weather-glyph" id="weather-glyph">&#127774;</div>
-              <div class="weather-body">
-                <div class="weather-temp"><span id="weather-temp">--</span><span class="unit">&deg;</span></div>
-                <div class="weather-label" id="weather-label">&hellip;</div>
-                <div class="weather-meta" id="weather-meta"></div>
-              </div>
-            </div>
-            <button class="flip-btn" type="button" aria-label="Show details">&#8250;</button>
-          </div>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Waffle Dashboard</title>
+<link rel="stylesheet" href="/style.css">
+<script type="module" src="/app.js"></script>
+</head>
+<body>
 
-          <div class="face back">
-            <header class="card-head">
-              <span class="card-title">Weather</span>
-              <span class="badge" id="wx-place"></span>
-            </header>
-            <div class="face-scroll">
-              <div class="hourly" id="wx-hours"></div>
-              <div class="stat-grid" id="wx-stats"></div>
-              <div class="day-list" id="wx-days"></div>
-            </div>
-            <button class="flip-btn" type="button" aria-label="Back to summary">&#8249;</button>
-          </div>
-        </div>
-      </section>
+<main class="edge" aria-label="Waffle Edge dashboard">
+  <button class="scene" id="scene" aria-label="Weather details"></button>
 
-      <!-- temps / tailscale -------------------------------------------- -->
-      <section class="card flip" id="temps-card">
-        <div class="flip-inner">
-          <div class="face front" tabindex="0" role="button" aria-label="Temperatures. Activate for Tailscale.">
-            <header class="card-head">
-              <span class="card-title">Temps</span>
-              <span class="badge" id="temps-badge"></span>
-            </header>
-            <div class="face-scroll">
-              <div class="temp-list" id="temps-list"></div>
-            </div>
-            <button class="flip-btn" type="button" aria-label="Show Tailscale">&#8250;</button>
-          </div>
+  <section class="band">
+    <section class="panel quota" id="quota" aria-label="AI quota"></section>
+    <section class="panel hw" id="hw" aria-label="System"></section>
+  </section>
 
-          <div class="face back">
-            <header class="card-head">
-              <span class="card-title">Tailscale</span>
-              <span class="badge" id="ts-state"></span>
-            </header>
-            <div class="face-scroll">
-              <div class="ts-self" id="ts-self"></div>
-              <div class="ts-peers" id="ts-peers"></div>
-            </div>
-            <button class="flip-btn" type="button" aria-label="Back to temperatures">&#8249;</button>
-          </div>
-        </div>
-      </section>
+  <section class="panel dock" aria-label="Controls">
+    <div class="group" id="launchers"></div>
+    <div class="sep"></div>
+    <div class="vol" id="vol">
+      <button class="tbtn" id="mute" aria-label="Mute"></button>
+      <div class="vol-body">
+        <div class="meta"><span id="voldev">Volume</span><b class="num" id="volv">–</b></div>
+        <input type="range" id="volr" min="0" max="100" step="1" value="0" aria-label="Volume" disabled>
+      </div>
+    </div>
+    <div class="sep"></div>
+    <div class="group">
+      <button class="tbtn util" id="themeBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-1.3-1-1.6-1-2.6 0-.9.7-1.5 1.6-1.5H16a5 5 0 0 0 5-5C21 6.3 17 3 12 3Z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10" cy="7.2" r="1.2" fill="currentColor"/><circle cx="14.5" cy="7.2" r="1.2" fill="currentColor"/></svg>Theme</button>
+      <button class="tbtn util" data-simple="screenshot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><circle cx="12" cy="12" r="3.2"/></svg>Screenshot</button>
+      <button class="tbtn util" data-simple="screensaver"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M14.5 8.2a3.3 3.3 0 1 0 1.8 4.6 2.6 2.6 0 0 1-1.8-4.6Z"/></svg>Screensaver</button>
+      <button class="tbtn util power" id="powerBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/></svg>Power</button>
+    </div>
+  </section>
+</main>
 
-      <!-- usage: opencode go + codex (front) / codex detail (back) ------- -->
-      <section class="card flip" id="usage-card">
-        <div class="flip-inner">
-          <div class="face front" tabindex="0" role="button" aria-label="Usage. Activate for Codex details.">
-            <header class="card-head">
-              <span class="card-title">Usage</span>
-            </header>
-            <div class="face-scroll between">
-              <div class="usage-section">
-                <div class="section-head">
-                  <span class="section-label">OpenCode Go</span>
-                  <span class="badge" id="opencode-plan"></span>
-                </div>
-                <div class="rows" id="opencode-rows"></div>
-              </div>
-              <div class="usage-section">
-                <div class="section-head">
-                  <span class="section-label">Codex</span>
-                  <span class="badge" id="codex-plan"></span>
-                </div>
-                <div class="hero compact">
-                  <div class="hero-num"><span id="codex-remaining">--</span><span class="pct">%</span></div>
-                  <div class="hero-side">
-                    <div class="hero-cap" id="codex-window">left</div>
-                    <div class="hero-sub" id="codex-used"></div>
-                  </div>
-                </div>
-                <div class="bar"><div class="bar-fill" id="codex-bar"></div></div>
-                <div class="card-foot" id="codex-foot"></div>
-              </div>
-            </div>
-            <button class="flip-btn" type="button" aria-label="Show Codex details">&#8250;</button>
-          </div>
+<div class="offline" id="offline" hidden>Dashboard server unreachable · showing the last readings · reconnecting</div>
 
-          <div class="face back">
-            <header class="card-head">
-              <span class="card-title">Codex</span>
-              <span class="badge" id="codex-back-plan"></span>
-            </header>
-            <div class="face-scroll">
-              <div class="pace" id="codex-pace"></div>
-              <div class="spark-wrap" id="codex-spark"></div>
-              <div class="stat-grid" id="codex-stats"></div>
-              <div class="reset-list" id="codex-resets"></div>
-            </div>
-            <button class="flip-btn" type="button" aria-label="Back to usage">&#8249;</button>
-          </div>
-        </div>
-      </section>
+<dialog class="sheet" id="wxDlg" aria-label="Weather details">
+  <div class="sheet-head">
+    <h2 id="wxTitle">Weather</h2>
+    <span id="wxFresh"></span>
+    <span class="grow"></span>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-pane="pHours" aria-selected="true">Next 12 h</button>
+      <button class="tab" role="tab" data-pane="pDays" aria-selected="false">5 days</button>
+      <button class="tab" role="tab" data-pane="pDetails" aria-selected="false">Details</button>
+      <button class="tab" role="tab" data-pane="pLoc" aria-selected="false">Location</button>
+    </div>
+    <button class="close" data-close aria-label="Close">×</button>
+  </div>
+  <div class="pane on" id="pHours"></div>
+  <div class="pane" id="pDays"></div>
+  <div class="pane" id="pDetails"></div>
+  <div class="pane" id="pLoc">
+    <div class="loc">
+      <div>
+        <div class="hint">Current location</div>
+        <div class="opt sel" id="locNow"></div>
+        <button class="opt" id="locIp">Use my approximate location<span>Based on this computer's internet connection</span></button>
+        <form id="locForm" class="loc-search">
+          <input id="locQuery" autocomplete="off" placeholder="Search a place" aria-label="Search a place" maxlength="80">
+          <button class="big primary" type="submit">Search</button>
+        </form>
+      </div>
+      <div>
+        <div class="hint">Results</div>
+        <div id="locResults" class="loc-results"></div>
+      </div>
+    </div>
+  </div>
+</dialog>
 
-      <!-- volume / quick actions --------------------------------------- -->
-      <section class="card flip" id="volume-card">
-        <div class="flip-inner">
-          <div class="face front">
-            <header class="card-head">
-              <span class="card-title">Volume</span>
-              <span class="badge" id="vol-device-badge"></span>
-            </header>
-            <div class="vol-device" id="vol-device">&hellip;</div>
-            <div class="vol-value" id="vol-value">--</div>
-            <div class="vol-buttons">
-              <button class="vbtn" id="vol-mute" type="button" aria-label="Toggle mute">&#128266;</button>
-              <button class="vbtn" id="vol-down" type="button" aria-label="Volume down">&minus;</button>
-              <button class="vbtn" id="vol-up" type="button" aria-label="Volume up">+</button>
-            </div>
-            <input class="vol-slider" id="vol-slider" type="range" min="0" max="100" step="1" value="0" aria-label="Volume" />
-            <button class="flip-btn" type="button" aria-label="Show details">&#8250;</button>
-          </div>
+<dialog class="sheet" id="themeDlg" aria-label="Theme">
+  <div class="sheet-head"><h2>Theme</h2><span class="grow"></span><span class="hint">Changes the look of the whole desktop</span><button class="close" data-close aria-label="Close">×</button></div>
+  <div class="pane on"><div class="themes" id="themes"></div></div>
+</dialog>
 
-          <div class="face back">
-            <header class="card-head">
-              <span class="card-title">Quick actions</span>
-              <span class="badge" id="qa-mic"></span>
-            </header>
-            <div class="action-grid" id="action-grid"></div>
-            <div class="card-foot" id="action-foot"></div>
-            <button class="flip-btn" type="button" aria-label="Back to summary">&#8249;</button>
-          </div>
-        </div>
-      </section>
-    </main>
-    <div class="offline" id="offline">Reconnecting&hellip;</div>
-    <script src="/app.js"></script>
-  </body>
+<dialog class="sheet" id="launchDlg" aria-label="Edit launchers">
+  <div class="sheet-head"><h2>Quick launchers</h2><span class="grow"></span><span class="hint" id="launchHint">Tap a slot, then an app</span><button class="close" data-close aria-label="Close">×</button></div>
+  <div class="pane on">
+    <div class="slots" id="slots"></div>
+    <div class="hint apps-hint">Installed applications</div>
+    <div class="apps" id="apps"></div>
+  </div>
+  <div class="foot"><button class="big" data-close>Cancel</button><button class="big primary" id="saveLaunchers">Save</button></div>
+</dialog>
+
+<dialog class="small" id="powerDlg" aria-label="Power">
+  <div id="powerBody"></div>
+</dialog>
+
+<div id="toast" popover="manual"><div id="toastMsg"></div></div>
+
+</body>
 </html>
