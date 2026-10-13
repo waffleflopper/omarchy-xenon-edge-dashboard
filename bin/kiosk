@@ -13,9 +13,6 @@ for _ in $(seq 1 60); do
   sleep 0.5
 done
 
-# Chromium owns fullscreen here (--kiosk); the Hyprland window rule only places
-# the window on DP-2 and strips the chrome. Setting `fullscreen` in the rule
-# instead stops sticking, so the split is deliberate.
 exec chromium \
   --app="$URL" \
   --kiosk \

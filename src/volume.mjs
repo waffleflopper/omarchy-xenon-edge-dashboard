@@ -1,59 +1,22 @@
-import { execFile } from 'node:child_process'
-import { promisify } from 'node:util'
-
-const exec = promisify(execFile)
 const SINK = '@DEFAULT_AUDIO_SINK@'
-
-// One tap of the +/- buttons.
-export const VOLUME_STEP = 0.05
-
-const clamp = (n) => Math.max(0, Math.min(1, n))
-
-export async function readVolume() {
-  const { stdout } = await exec('wpctl', ['get-volume', SINK])
-  const match = stdout.match(/Volume:\s+([0-9.]+)/)
-  if (!match) throw new Error(`Unexpected wpctl output: ${stdout.trim()}`)
-
-  let device = null
-  try {
-    const { stdout: info } = await exec('wpctl', ['inspect', SINK])
-    device = info.match(/node\.description = "([^"]+)"/)?.[1] ?? null
-  } catch {
-    // The name is cosmetic; a failure here shouldn't blank the widget.
-  }
-
-  return {
-    volume: Number(match[1]),
-    muted: /\[MUTED\]/.test(stdout),
-    device,
-    step: VOLUME_STEP,
-  }
+export function parseVolume(stdout) {
+  const match = /Volume:\s+([0-9.]+)/.exec(stdout)
+  if (!match || !Number.isFinite(Number(match[1]))) return null
+  return { volume: Number(match[1]), muted: /\[MUTED\]/.test(stdout) }
 }
 
-export async function setVolume({ action, value }) {
-  switch (action) {
-    case 'up':
-      await exec('wpctl', ['set-volume', '-l', '1.0', SINK, `${VOLUME_STEP * 100}%+`])
-      break
-    case 'down':
-      await exec('wpctl', ['set-volume', SINK, `${VOLUME_STEP * 100}%-`])
-      break
-    case 'mute':
-      await exec('wpctl', ['set-mute', SINK, 'toggle'])
-      break
-    case 'unmute':
-      await exec('wpctl', ['set-mute', SINK, '0'])
-      break
-    case 'set': {
-      if (typeof value !== 'number' || Number.isNaN(value)) throw new Error('set requires a numeric value')
-      const target = clamp(value)
-      await exec('wpctl', ['set-volume', '-l', '1.0', SINK, String(target)])
-      // Sliding up from zero should also un-mute, matching every other mixer.
-      if (target > 0) await exec('wpctl', ['set-mute', SINK, '0'])
-      break
-    }
-    default:
-      throw new Error(`Unknown volume action: ${action}`)
-  }
-  return readVolume()
+export async function readVolume(run) {
+  const parsed = parseVolume((await run(['wpctl', 'get-volume', SINK])).stdout)
+  if (!parsed) throw new Error('unexpected wpctl output')
+  const info = await run(['wpctl', 'inspect', SINK]).then(({ stdout }) => stdout, () => '')
+  return { ...parsed, device: /node\.description = "([^"]+)"/.exec(info)?.[1] ?? null }
 }
+
+export const volumeCommands = (value) => {
+  const target = Math.round(Math.max(0, Math.min(1, value)) * 100) / 100
+  const argv = [['wpctl', 'set-volume', '-l', '1.0', SINK, String(target)]]
+  if (target > 0) argv.push(['wpctl', 'set-mute', SINK, '0'])
+  return argv
+}
+
+export const muteCommand = (muted) => ['wpctl', 'set-mute', SINK, muted ? '1' : '0']

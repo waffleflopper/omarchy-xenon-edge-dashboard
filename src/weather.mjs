@@ -1,184 +1,146 @@
-// WMO weather interpretation codes -> [label, day glyph, night glyph].
-const WMO = {
-  0: ['Clear sky', '☀️', '🌙'],
-  1: ['Mainly clear', '🌤️', '🌙'],
-  2: ['Partly cloudy', '⛅', '☁️'],
-  3: ['Overcast', '☁️', '☁️'],
-  45: ['Fog', '🌫️', '🌫️'],
-  48: ['Rime fog', '🌫️', '🌫️'],
-  51: ['Light drizzle', '🌦️', '🌧️'],
-  53: ['Drizzle', '🌦️', '🌧️'],
-  55: ['Dense drizzle', '🌧️', '🌧️'],
-  56: ['Freezing drizzle', '🌧️', '🌧️'],
-  57: ['Freezing drizzle', '🌧️', '🌧️'],
-  61: ['Light rain', '🌦️', '🌧️'],
-  63: ['Rain', '🌧️', '🌧️'],
-  65: ['Heavy rain', '🌧️', '🌧️'],
-  66: ['Freezing rain', '🌧️', '🌧️'],
-  67: ['Freezing rain', '🌧️', '🌧️'],
-  71: ['Light snow', '🌨️', '🌨️'],
-  73: ['Snow', '🌨️', '🌨️'],
-  75: ['Heavy snow', '❄️', '❄️'],
-  77: ['Snow grains', '🌨️', '🌨️'],
-  80: ['Rain showers', '🌦️', '🌧️'],
-  81: ['Rain showers', '🌧️', '🌧️'],
-  82: ['Violent showers', '⛈️', '⛈️'],
-  85: ['Snow showers', '🌨️', '🌨️'],
-  86: ['Snow showers', '❄️', '❄️'],
-  95: ['Thunderstorm', '⛈️', '⛈️'],
-  96: ['Thunderstorm, hail', '⛈️', '⛈️'],
-  99: ['Thunderstorm, hail', '⛈️', '⛈️'],
-}
+import { SourceError } from './errors.mjs'
 
-// WMO weather code + day/night -> the condition key used to pick a background
-// image (see src/backgrounds.mjs).
-export function weatherKind(code, isDay) {
-  if (code == null) return 'clouds'
-  if (code >= 95) return 'storm'
-  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return 'snow'
-  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return 'rain'
-  if (code === 45 || code === 48) return 'fog'
-  if (code === 3) return 'clouds'
-  if (code === 2) return 'partly'
-  if (code === 0 || code === 1) return isDay ? 'clear-day' : 'clear-night'
-  return 'clouds'
-}
+const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast'
+const GEOCODE_URL = 'https://geocoding-api.open-meteo.com/v1/search'
+const OVATION_URL = 'https://services.swpc.noaa.gov/json/ovation_aurora_latest.json'
 
-const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
-const compass = (deg) => (typeof deg === 'number' ? COMPASS[Math.round(deg / 45) % 8] : null)
+const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null)
+const secondsToMs = (seconds) => (Number.isFinite(seconds) ? seconds * 1000 : null)
 
-// Synodic month, anchored to a known new moon (2000-01-06 18:14 UTC).
-function moonInfo(date = new Date()) {
-  const SYNODIC = 29.530588853
-  const knownNewMoon = Date.UTC(2000, 0, 6, 18, 14)
-  let phase = ((date.getTime() - knownNewMoon) / 86400000 / SYNODIC) % 1
-  if (phase < 0) phase += 1
-
-  const names = [
-    'New moon',
-    'Waxing crescent',
-    'First quarter',
-    'Waxing gibbous',
-    'Full moon',
-    'Waning gibbous',
-    'Last quarter',
-    'Waning crescent',
-  ]
-  const glyphs = ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘']
-  const index = Math.round(phase * 8) % 8
-  return { phase: Number(phase.toFixed(3)), name: names[index], glyph: glyphs[index] }
-}
-
-let geo = null
-
-async function geolocate() {
-  if (geo) return geo
-
-  const first = await fetch('https://ipwho.is/', { signal: AbortSignal.timeout(10000) })
-  if (first.ok) {
-    const body = await first.json()
-    if (body?.success && typeof body.latitude === 'number') {
-      geo = {
-        latitude: body.latitude,
-        longitude: body.longitude,
-        city: body.city,
-        region: body.region,
-        country: body.country,
-        timezone: body.timezone?.id ?? 'auto',
-      }
-      return geo
-    }
+async function getJson(url, signal, fetchImpl = fetch) {
+  let res
+  try {
+    res = await fetchImpl(url, { signal, headers: { accept: 'application/json' } })
+  } catch (err) {
+    if (err?.name === 'TimeoutError' || err?.name === 'AbortError') throw new SourceError('timeout')
+    throw new SourceError('network')
   }
-
-  throw new Error('Could not determine location from IP')
+  if (!res.ok) throw new SourceError('unavailable', `HTTP ${res.status}`)
+  try {
+    return await res.json()
+  } catch {
+    throw new SourceError('malformed')
+  }
 }
 
-export async function readWeather() {
-  const place = await geolocate()
-
+export function forecastUrl({ lat, lon }, units) {
   const params = new URLSearchParams({
-    latitude: String(place.latitude),
-    longitude: String(place.longitude),
-    current:
-      'temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure',
-    hourly: 'temperature_2m,weather_code,precipitation_probability',
-    daily:
-      'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max',
-    temperature_unit: 'fahrenheit',
-    wind_speed_unit: 'mph',
-    timezone: place.timezone || 'auto',
-    forecast_days: '5',
+    latitude: String(lat),
+    longitude: String(lon),
+    current: 'temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,cloud_cover,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m',
+    hourly: 'temperature_2m,weather_code,precipitation_probability,is_day,cloud_cover',
+    daily: 'weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_probability_max',
+    timeformat: 'unixtime',
+    timezone: 'auto',
+    forecast_days: '7',
+    temperature_unit: units === 'metric' ? 'celsius' : 'fahrenheit',
+    wind_speed_unit: units === 'metric' ? 'kmh' : 'mph',
   })
+  return `${FORECAST_URL}?${params}`
+}
+export function parseForecast(body, place, units = 'imperial') {
+  const c = body?.current
+  const d = body?.daily
+  const h = body?.hourly
+  if (!c || !d || !h || !Array.isArray(d.time) || !Array.isArray(h.time)) throw new SourceError('malformed', 'forecast shape')
+  if ((c.is_day !== 0 && c.is_day !== 1) || num(c.temperature_2m) === null || !Number.isInteger(c.weather_code) || !Number.isFinite(c.time)) throw new SourceError('malformed', 'current conditions')
+  if (typeof body.timezone !== 'string' || !Number.isFinite(body.utc_offset_seconds)) throw new SourceError('malformed', 'timezone')
+  try { new Intl.DateTimeFormat('en', { timeZone: body.timezone }) } catch { throw new SourceError('malformed', 'timezone') }
 
-  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`, {
-    signal: AbortSignal.timeout(10000),
-  })
-  if (!res.ok) throw new Error(`Open-Meteo failed: HTTP ${res.status}`)
+  const days = d.time.map((t, i) => ({
+    date: secondsToMs(t),
+    code: num(d.weather_code?.[i]),
+    high: num(d.temperature_2m_max?.[i]),
+    low: num(d.temperature_2m_min?.[i]),
+    sunrise: d.sunrise?.[i] > 0 ? secondsToMs(d.sunrise[i]) : null,
+    sunset: d.sunset?.[i] > 0 ? secondsToMs(d.sunset[i]) : null,
+    uvMax: num(d.uv_index_max?.[i]),
+    precipProb: num(d.precipitation_probability_max?.[i]),
+  })).filter((day) => day.date !== null)
+  if (!days.length) throw new SourceError('malformed', 'daily forecast')
 
-  const body = await res.json()
-  const current = body.current
-  const [label, dayGlyph, nightGlyph] = WMO[current.weather_code] ?? ['Unknown', '🌡️', '🌡️']
-  const isDay = current.is_day === 1
-
-  // Hourly: start at the current hour and take the next 12.
-  const hourly = body.hourly ?? { time: [] }
-  let startIndex = hourly.time.findIndex((t) => Date.parse(t) >= Date.now() - 3600000)
-  if (startIndex < 0) startIndex = 0
-  const hours = hourly.time.slice(startIndex, startIndex + 12).map((t, i) => {
-    const idx = startIndex + i
-    const code = hourly.weather_code?.[idx]
-    const [, dayIcon, nightIcon] = WMO[code] ?? ['', '🌡️', '🌡️']
-    const hour = new Date(t).getHours()
-    return {
-      time: t,
-      hour,
-      temperature: Math.round(hourly.temperature_2m?.[idx]),
-      code,
-      glyph: hour >= 6 && hour < 20 ? dayIcon : nightIcon,
-      precip: hourly.precipitation_probability?.[idx] ?? null,
-    }
-  })
-
-  const daily = body.daily ?? { time: [] }
-  const days = daily.time.map((date, i) => {
-    const code = daily.weather_code?.[i]
-    return {
-      date,
-      code,
-      glyph: (WMO[code] ?? ['', '🌡️'])[1],
-      high: Math.round(daily.temperature_2m_max?.[i]),
-      low: Math.round(daily.temperature_2m_min?.[i]),
-      precip: daily.precipitation_probability_max?.[i] ?? null,
-    }
-  })
+  const hours = h.time.map((t, i) => ({
+    at: secondsToMs(t),
+    temp: num(h.temperature_2m?.[i]),
+    code: num(h.weather_code?.[i]),
+    isDay: h.is_day?.[i] === 1,
+    precipProb: num(h.precipitation_probability?.[i]),
+    cloudCover: num(h.cloud_cover?.[i]),
+  })).filter((hour) => hour.at !== null && hour.at >= secondsToMs(c.time) - 3600_000).slice(0, 30)
 
   return {
-    // Front face
-    temperature: Math.round(current.temperature_2m),
-    feelsLike: Math.round(current.apparent_temperature),
-    high: Math.round(daily.temperature_2m_max?.[0]),
-    low: Math.round(daily.temperature_2m_min?.[0]),
-    windSpeed: Math.round(current.wind_speed_10m),
-    isDay,
-    code: current.weather_code,
-    kind: weatherKind(current.weather_code, isDay),
-    label,
-    glyph: isDay ? dayGlyph : nightGlyph,
-    place: place.city || place.region || place.country || 'Unknown',
-    region: place.region ?? null,
-    units: '°F',
-
-    // Back face
-    humidity: current.relative_humidity_2m ?? null,
-    pressure: current.surface_pressure != null ? Math.round(current.surface_pressure) : null,
-    windDirection: compass(current.wind_direction_10m),
-    dewPoint: null,
-    uvIndex: daily.uv_index_max?.[0] != null ? Math.round(daily.uv_index_max[0]) : null,
-    precipProbability: hourly.precipitation_probability?.[startIndex] ?? null,
-    sunrise: daily.sunrise?.[0] ?? null,
-    sunset: daily.sunset?.[0] ?? null,
-    hours,
+    place,
+    timezone: body.timezone,
+    utcOffsetSeconds: body.utc_offset_seconds,
+    units: units === 'metric' ? { temp: '°C', wind: 'km/h' } : { temp: '°F', wind: 'mph' },
+    current: {
+      at: secondsToMs(c.time),
+      temp: c.temperature_2m,
+      feelsLike: num(c.apparent_temperature),
+      code: c.weather_code,
+      isDay: c.is_day === 1,
+      cloudCover: num(c.cloud_cover),
+      humidity: num(c.relative_humidity_2m),
+      pressure: num(c.pressure_msl),
+      windSpeed: num(c.wind_speed_10m),
+      windDir: num(c.wind_direction_10m),
+      windGust: num(c.wind_gusts_10m),
+    },
     days,
-    moon: moonInfo(),
+    hours,
   }
+}
+
+let ipPlace = null
+
+async function placeFromIp(signal, fetchImpl) {
+  if (ipPlace) return ipPlace
+  const body = await getJson('https://ipwho.is/', signal, fetchImpl)
+  if (!body?.success || num(body.latitude) === null || num(body.longitude) === null) throw new SourceError('unavailable', 'IP location lookup failed')
+  ipPlace = { name: body.city || body.region || body.country || 'Unknown', region: body.region || null, lat: body.latitude, lon: body.longitude, source: 'ip' }
+  return ipPlace
+}
+
+export async function readWeather({ location, units }, signal, fetchImpl = fetch) {
+  const place = location ? { ...location, source: 'override' } : await placeFromIp(signal, fetchImpl)
+  return parseForecast(await getJson(forecastUrl(place, units), signal, fetchImpl), place, units)
+}
+
+export function parseGeocode(body) {
+  if (body == null || typeof body !== 'object') throw new SourceError('malformed')
+  const results = Array.isArray(body.results) ? body.results : []
+  return results
+    .filter((r) => typeof r?.name === 'string' && num(r.latitude) !== null && num(r.longitude) !== null)
+    .slice(0, 8)
+    .map((r) => ({
+      name: [r.name, r.admin1, r.country].filter((x) => typeof x === 'string' && x).join(', ').slice(0, 80),
+      lat: Math.round(r.latitude * 1e4) / 1e4,
+      lon: Math.round(r.longitude * 1e4) / 1e4,
+    }))
+}
+
+export async function searchPlaces(query, signal, fetchImpl = fetch) {
+  const params = new URLSearchParams({ name: query, count: '8', language: 'en', format: 'json' })
+  return parseGeocode(await getJson(`${GEOCODE_URL}?${params}`, signal, fetchImpl))
+}
+
+/**
+ * Pure. Keeps only the OVATION cell nearest the location; the global grid
+ * never leaves the server. Coordinates are [lon 0..359, lat -90..90, percent].
+ */
+export function parseOvation(body, { lat, lon }) {
+  const observedAt = Date.parse(body?.['Observation Time'])
+  const forecastAt = Date.parse(body?.['Forecast Time'])
+  const coords = body?.coordinates
+  if (!Number.isFinite(observedAt) || !Number.isFinite(forecastAt) || !Array.isArray(coords)) throw new SourceError('malformed', 'OVATION shape')
+  const wantLon = ((Math.round(lon) % 360) + 360) % 360
+  const wantLat = Math.round(lat)
+  const cell = coords.find((p) => Array.isArray(p) && p[0] === wantLon && p[1] === wantLat)
+  if (!cell || num(cell[2]) === null) throw new SourceError('malformed', 'no OVATION cell for location')
+  return { probability: cell[2], observedAt, forecastAt, lat: wantLat, lon: wantLon > 180 ? wantLon - 360 : wantLon }
+}
+
+export async function readAurora(place, signal, fetchImpl = fetch) {
+  if (!place) throw new SourceError('unavailable', 'waiting for the weather location')
+  return parseOvation(await getJson(OVATION_URL, signal, fetchImpl), place)
 }
