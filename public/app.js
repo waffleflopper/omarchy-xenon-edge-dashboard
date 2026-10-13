@@ -450,6 +450,7 @@ document.addEventListener('click', async (e) => {
     busy(t, async () => {
       const r = await act({ kind: 'refresh', id: d.refresh })
       if (r.retryAt) toast(`The provider asked us to wait · retry after ${hhmm(r.retryAt)}`)
+      else if (d.refresh === 'weather') toast('Refreshing weather…')
     })
   }
   else if (d.launch) {
