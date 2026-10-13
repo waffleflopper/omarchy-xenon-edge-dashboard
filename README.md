@@ -220,6 +220,8 @@ appear in responses or logs; errors reach the page as short fixed messages.
   row says so by label; account IDs and emails never leave the server.
 - **Weather** comes from Open-Meteo with epoch times and the location's time
   zone, so hours and sunrise are shown in the forecast location's local time.
+  If it goes stale, open the weather sheet and press Refresh weather; reloading
+  the page does not re-read it.
 - **Aurora** is the NOAA SWPC OVATION 30-minute forecast. The server keeps only
   the grid cell nearest the weather location.
 - **Hardware** runs `sensors -j` and `nvidia-smi` and reads `/proc`.
