@@ -152,7 +152,7 @@ function windowCell(w, now, stale) {
     sub = p.state === 'over' ? `${p.runsOutAt ? `Runs out ≈${when(p.runsOutAt, now)}` : `Projects ${projectedLabel(p)} used`} · resets ${when(w.resetsAt, now)}`
       : p.state === 'early' ? `Too early to project · resets ${when(w.resetsAt, now)}`
         : p.state === 'exhausted' ? `Limit reached · resets ${when(w.resetsAt, now)}`
-          : `Projects ${projectedLabel(p)} used · resets ${when(w.resetsAt, now)}`
+          : `${projectedLabel(p)} used at reset · ${when(w.resetsAt, now)}`
   }
   return `<div class="win ${stale ? 'is-stale' : ''}"><div class="top"><span class="lbl">${lbl}</span><span class="chip ${p.state}">${CHIP[p.state]}</span></div><div class="val">${val}</div>${bar}<div class="sub num">${sub}</div></div>`
 }
