@@ -1,5 +1,5 @@
 import {
-  HOUR, MINUTE, acceptSlot, dayAt, freshness, isLive, moonLit, moonName, moonPhase, pace, placeApp, projectedLabel, sceneFor, usedLabel,
+  HOUR, MINUTE, acceptSlot, dayAt, freshness, isLive, moonLit, moonName, moonPhase, pace, percentLabel, placeApp, projectedLabel, sceneFor,
 } from './domain.mjs'
 import { ICONS, appIcon, sceneSVG, wxIcon } from './scene.mjs'
 
@@ -145,13 +145,14 @@ function windowCell(w, now, stale) {
     bar = '<div class="bar dim"></div>'
     sub = `Reset ${hhmm(w.resetsAt)} · awaiting new reading`
   } else {
-    val = `<b class="num">${usedLabel(w.usedPercent)}</b><span>used</span>`
-    const tick = p.elapsedPercent != null ? `<div class="tick" style="left:${Math.min(100, p.elapsedPercent).toFixed(1)}%"></div>` : ''
-    bar = `<div class="bar"><div class="fill" style="width:${Math.min(100, w.usedPercent)}%;background:${CHIP_COLOR[p.state]}"></div>${tick}</div>`
-    sub = p.state === 'over' ? `${p.runsOutAt ? `Runs out ≈${when(p.runsOutAt, now)}` : `Projects ${projectedLabel(p)}`} · resets ${when(w.resetsAt, now)}`
+    const remainingPercent = Math.min(100, Math.max(0, 100 - w.usedPercent))
+    val = `<b class="num">${percentLabel(remainingPercent)}</b><span>left</span>`
+    const tick = p.elapsedPercent != null ? `<div class="tick" style="left:${Math.min(100, Math.max(0, 100 - p.elapsedPercent)).toFixed(1)}%"></div>` : ''
+    bar = `<div class="bar"><div class="fill" style="width:${remainingPercent}%;background:${CHIP_COLOR[p.state]}"></div>${tick}</div>`
+    sub = p.state === 'over' ? `${p.runsOutAt ? `Runs out ≈${when(p.runsOutAt, now)}` : `Projects ${projectedLabel(p)} used`} · resets ${when(w.resetsAt, now)}`
       : p.state === 'early' ? `Too early to project · resets ${when(w.resetsAt, now)}`
         : p.state === 'exhausted' ? `Limit reached · resets ${when(w.resetsAt, now)}`
-          : `Projects ${projectedLabel(p)} · resets ${when(w.resetsAt, now)}`
+          : `Projects ${projectedLabel(p)} used · resets ${when(w.resetsAt, now)}`
   }
   return `<div class="win ${stale ? 'is-stale' : ''}"><div class="top"><span class="lbl">${lbl}</span><span class="chip ${p.state}">${CHIP[p.state]}</span></div><div class="val">${val}</div>${bar}<div class="sub num">${sub}</div></div>`
 }
@@ -185,7 +186,7 @@ function renderQuota() {
     const cells = ['session', 'weekly'].map((k) => (byKind[k] ? windowCell(byKind[k], now, stale) : other.length ? windowCell(other.shift(), now, stale) : missingCell(k, a.label))).join('')
     return `<div class="acct">${head}${cells}</div>`
   }).join('')
-  $('quota').innerHTML = `<div class="panel-head">AI quota<span class="grow"></span><span class="legend"><span><b></b>used</span><span><i></i>even pace</span><span>Pace = projected use at reset</span></span></div>${rows}`
+  $('quota').innerHTML = `<div class="panel-head">AI quota<span class="grow"></span><span class="legend"><span><b></b>left</span><span><i></i>even pace</span><span>Pace = projected use at reset</span></span></div>${rows}`
 }
 
 const heat = (c, [warn, hot]) => (c >= hot ? 'var(--red)' : c >= warn ? 'var(--yellow)' : 'var(--green)')

@@ -87,7 +87,8 @@ export function freshness(slot, policy, now) {
 
 export const isLive = (f) => f.tone === 'live'
 
-export function usedLabel(v) {
+export function percentLabel(v) {
+  v = Number(v.toPrecision(12))
   if (v > 0 && v < 0.1) return '<0.1%'
   if ((v > 0 && v < 1) || (v > 99 && v < 100)) return `${Math.floor(v * 10) / 10}%`
   return `${Math.round(v)}%`

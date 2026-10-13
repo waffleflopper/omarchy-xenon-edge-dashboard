@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { MINUTE, POLICIES, acceptSlot, freshness, isLive, pace, placeApp, projectedLabel, sceneFor, usedLabel } from '../public/domain.mjs'
+import { MINUTE, POLICIES, acceptSlot, freshness, isLive, pace, percentLabel, placeApp, projectedLabel, sceneFor } from '../public/domain.mjs'
 
 const NOW = Date.UTC(2026, 9, 12, 12, 0)
 const half = (usedPercent) => ({ kind: 'session', label: 'Session', usedPercent, durationMinutes: 300, resetsAt: NOW + 150 * MINUTE })
@@ -28,13 +28,13 @@ test('over pace reports when the window runs out', () => {
   assert.equal(pace(half(60), NOW).runsOutAt, NOW - 150 * MINUTE + 250 * MINUTE)
 })
 
-test('used share keeps a decimal where rounding would misreport it', () => {
-  assert.equal(usedLabel(0.4), '0.4%')
-  assert.equal(usedLabel(0.04), '<0.1%')
-  assert.equal(usedLabel(0), '0%')
-  assert.equal(usedLabel(17.4), '17%')
-  assert.equal(usedLabel(99.96), '99.9%')
-  assert.equal(usedLabel(100), '100%')
+test('percent label keeps a decimal where rounding would misreport it', () => {
+  assert.equal(percentLabel(0.4), '0.4%')
+  assert.equal(percentLabel(0.04), '<0.1%')
+  assert.equal(percentLabel(0), '0%')
+  assert.equal(percentLabel(17.4), '17%')
+  assert.equal(percentLabel(99.96), '99.9%')
+  assert.equal(percentLabel(100), '100%')
 })
 
 test('expired, exhausted and early windows are explicit states', () => {

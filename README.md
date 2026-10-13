@@ -20,10 +20,11 @@ windows narrower than 1450 px get a stacked, scrolling layout.
   least 10% near the weather location, a recent model run, darkness, cloud
   under 50% and current weather. It is labelled as a forecast, never a sighting.
 - **AI quota.** One row per account: OpenAI (Codex) and two Claude accounts.
-  Each reported window shows the share used, an even-pace tick and a pace chip.
-  Pace is the projected use at reset (used ÷ elapsed share of the window):
-  under below 95%, at from 95% to 105%, over above 105%. The first five minutes
-  of a window are "early", a window past its reset is "reset", and 100% used is
+  Each reported window shows the share left, an even-pace tick and a pace chip.
+  Bars start full and shrink as quota is used, and the tick marks how much would
+  be left at an even pace. Pace is the projected use at reset (used ÷ elapsed
+  share of the window): under below 95%, at from 95% to 105%, over above 105%.
+  The first five minutes of a window are "early", a window past its reset is "reset", and 100% used is
   "limit hit". A window an account does not report shows "Not reported", never 0%.
 - **System.** CPU (k10temp Tctl), GPU (nvidia-smi) and board (nct6687 Diode 0)
   temperatures, storage with `/` and `/home` counted once when they share a
