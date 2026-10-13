@@ -65,8 +65,8 @@ git clone <your-fork> ~/Projects/waffle-dashboard
 ```ini
 [Unit]
 Description=Waffle Dashboard backend
-After=network-online.target
-Wants=network-online.target
+After=graphical-session.target
+PartOf=graphical-session.target
 
 [Service]
 Type=simple
@@ -77,7 +77,7 @@ Restart=on-failure
 RestartSec=5
 
 [Install]
-WantedBy=default.target
+WantedBy=graphical-session.target
 ```
 
 ```bash
@@ -88,6 +88,31 @@ curl -fsS http://127.0.0.1:8787/healthz
 
 `bin/serve` puts `~/.local/share/mise/shims` on `PATH` so `node` and `codex`
 resolve; adjust it if you install Node elsewhere.
+
+The backend needs Hyprland's session variables to launch apps and control the
+desktop. Under uwsm, `graphical-session.target` waits for `WAYLAND_DISPLAY`
+and `HYPRLAND_INSTANCE_SIGNATURE`. Starting the backend after that target
+lets it inherit those variables. `PartOf=` stops it at logout so the next
+login starts it with the new session's environment.
+
+#### Migrating an existing install
+
+While logged into Hyprland, disable the old unit before replacing it. This
+removes its `default.target.wants` link, which otherwise starts the backend
+too early at boot.
+
+```bash
+systemctl --user disable waffle-dashboard.service
+```
+
+Replace `~/.config/systemd/user/waffle-dashboard.service` with the unit above,
+keeping any custom installation paths. Then apply it:
+
+```bash
+systemctl --user daemon-reload
+systemctl --user enable waffle-dashboard.service
+systemctl --user restart waffle-dashboard.service
+```
 
 ### 3. Launch the kiosk at login
 

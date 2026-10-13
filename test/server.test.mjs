@@ -116,12 +116,12 @@ test('a launch is cancelled when focus cannot leave the Edge', async () => {
   assert.equal(commands.some((c) => c.argv[0] === 'uwsm-app'), false)
 })
 
-test('a launch runs in its own app scope once another monitor has focus', async () => {
+test('a launch runs as its own systemd service once another monitor has focus', async () => {
   monitors = [{ name: 'DP-2', focused: false, width: 2560, height: 720 }, { name: 'DP-1', focused: true, width: 3440, height: 1440 }]
   commands.length = 0
   const res = await doAction({ kind: 'launch', desktopId: 'foot.desktop' })
   assert.deepEqual(res.json, { ok: true, dryRun: false, monitor: 'DP-1' })
-  assert.deepEqual(commands.at(-1), { argv: ['uwsm-app', '--', 'foot.desktop'], group: 'launch' })
+  assert.deepEqual(commands.at(-1), { argv: ['uwsm-app', '-t', 'service', '--', 'foot.desktop'], group: 'launch' })
   assert.equal((await doAction({ kind: 'launch', desktopId: 'evil.desktop' })).status, 400)
 })
 
