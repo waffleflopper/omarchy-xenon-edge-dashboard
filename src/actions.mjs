@@ -12,8 +12,8 @@ export const COMMANDS = {
   monitors: ['hyprctl', 'monitors', '-j'],
   focusMonitorLua: (name) => ['hyprctl', 'dispatch', `hl.dsp.focus({ monitor = "${name}" })`],
   focusMonitorLegacy: (name) => ['hyprctl', 'dispatch', 'focusmonitor', name],
-  // uwsm starts the app in its own systemd unit, outside the dashboard service.
-  launch: (desktopId) => ['uwsm-app', '--', desktopId],
+  // Scope mode waits for the app to exit. Service mode returns after startup.
+  launch: (desktopId) => ['uwsm-app', '-t', 'service', '--', desktopId],
 }
 
 export class ActionError extends Error {
